@@ -107,9 +107,13 @@ def run_Astar(chessboard, fringe_chess):
 
 '''Starts the search~'''
 if __name__ == '__main__':
+    '''start time'''
+    start_time = time.time()
     '''fringe_chess = chessboard, total cost, past cost, future cost'''
     fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard), ""]])
     print(run_Astar(chessboard, fringe_chess))
+    end_time = time.time()
+    print("run-time:", end_time - start_time)
 
 
 '''Notes for testing functions in case I need them'''
