@@ -5,6 +5,7 @@ import pandas as pd
 from tkinter.filedialog import askopenfilename
 import warnings
 
+#TODO: Implement Greedy
 #TODO: Add diagonal conflict resolution in run_Astar
 #TODO: Prove heuristic is admissible
 #TODO: Part two is permitting queens to move horizontal in conjuntion to vertical
@@ -87,7 +88,7 @@ def run_Astar(chessboard, fringe_chess):
                 for k in list(range(0,j)) + list(range(j+1,len(chessboard))):
                     temp_chess = np.copy(fringe_chess[chosen_chess, 0])
                     temp_chess[j, i], temp_chess[k, i] = temp_chess[k, i], temp_chess[j, i]
-                    #TODO: to get a greedy best-first approach is it as simple as cutting off one end of the below '+' symbol?
+                    '''to get a greedy best-first approach is it as simple as cutting off one end of the below '+' symbol?'''
                     cost = abs(j - k) * (fringe_chess[chosen_chess, 0][j, i] ** 2) + get_current_cost(temp_chess) + fringe_chess[chosen_chess, 2]
                     fringe_chess = np.append(fringe_chess, np.array([[temp_chess, cost, abs(j - k) * (fringe_chess[chosen_chess, 0][j, i] ** 2) + fringe_chess[chosen_chess, 2], get_current_cost(temp_chess), fringe_chess[chosen_chess, 4] + "Move {},{} to {},{}. ".format(j, i, k, i)]]), axis=0)
     
