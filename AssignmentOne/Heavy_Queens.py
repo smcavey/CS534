@@ -1,5 +1,9 @@
 import numpy as np
+import sys
 import time
+import pandas as pd
+from tkinter.filedialog import askopenfilename
+import warnings
 
 '''UNCOMMENT DESIRED CHESSBOARD'''
 '''Note: The first chessboard is kinda too big to work on my computer'''
@@ -41,13 +45,13 @@ import time
                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])'''
 
-chessboard = np.array([[4, 0, 0, 0, 9, 0, 0],
+'''chessboard = np.array([[4, 0, 0, 0, 9, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0],
                        [0, 2, 8, 0, 0, 4, 0],
                        [0, 0, 0, 8, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 4],
-                       [0, 0, 0, 0, 0, 0, 0]])
+                       [0, 0, 0, 0, 0, 0, 0]])'''
 
 '''chessboard = np.array([[4, 0, 0, 0, 9],
                        [0, 0, 0, 0, 0],
@@ -107,14 +111,30 @@ def run_Astar(chessboard, fringe_chess):
 
 '''Starts the search~'''
 if __name__ == '__main__':
-    '''start time'''
-    start_time = time.time()
+    '''select input csv'''
+    inp_path = askopenfilename()
+    print("user chose", inp_path)
+    try:
+        inp_csv = open(inp_path)
+    except IOError as e:
+        print(e)
+        sys.exit()
+    '''create chessboard'''
+    df = pd.read_csv(inp_path, delimiter=',', header=None)
+    chessboard = df.to_numpy()
+    # chessboard = np.genfromtxt(inp_csv, delimiter=',', dtype='int32')
+    '''convert nans to 0s'''
+    chessboard[np.isnan(chessboard)] = 0
+    print(repr(chessboard))
+    '''suppress warnings'''
+    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
     '''fringe_chess = chessboard, total cost, past cost, future cost'''
     fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard), ""]])
+    '''start time'''
+    start_time = time.time()
     print(run_Astar(chessboard, fringe_chess))
     end_time = time.time()
     print("run-time:", end_time - start_time)
-
 
 '''Notes for testing functions in case I need them'''
 #print(np.any(chessboard[3, :] > 0))
