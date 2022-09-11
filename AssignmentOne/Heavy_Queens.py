@@ -5,11 +5,11 @@ import pandas as pd
 from tkinter.filedialog import askopenfilename
 import warnings
 
-#TODO: Implement Greedy
-#TODO: Add diagonal conflict resolution in run_Astar
-#TODO: Prove heuristic is admissible
-#TODO: Part two is permitting queens to move horizontal in conjuntion to vertical
-#TODO: Final answer output needs exact sequence of movements to solution state
+#TODO: Implement Greedy (Willow)
+#TODO: Add diagonal conflict resolution in run_Astar (Jesulona)
+#TODO: Prove heuristic is admissible (Write-up)
+#TODO: Part two is permitting queens to move horizontal in conjuntion to vertical (Kain)
+#TODO: Final answer output needs exact sequence of movements to solution state (Spencer)
 
 '''UNCOMMENT DESIRED CHESSBOARD'''
 '''Note: The first chessboard is kinda too big to work on my computer'''
