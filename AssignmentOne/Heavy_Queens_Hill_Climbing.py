@@ -2,7 +2,7 @@
     Methods:
         run(chessboard)                                 main running function of hill climbing
         calculate_initial_conflict_scores(chessboard)   calculates initial heuristic
-        calculate_followup_conflict_scores(chessboard)  calculates subsequent heuristics per square
+        calculate_conflicts(chessboard)                 calculates subsequent heuristics per square
         add_labels(chessboard)                          adds 'H' and 'Q' prefixes to queens and heuristic squares
         print_board(chessboard)                         helper function to print board in pretty way
     Global Variables:
@@ -18,8 +18,11 @@ import csv
 import copy
 
 initial_heuristic_cost = 0
+moves = 0
 current_heuristic_cost = None
 num_queens = 0
+is_complete = False
+break_double_loop = False
 
 def calculate_initial_conflict_scores(chessboard):
     '''make initial heuristic calculation'''
@@ -63,38 +66,96 @@ def calculate_conflicts(chessboard):
                             '''if square is horizontal from chessboard[row][col]...initial_heuristic_cost+=1'''
                             if r == row and c != col:
                                 conflicts += 1
+    print("conflicts:", conflicts)
     return conflicts
 
 '''ASSUMPTION: 1 queen per column'''
 '''ASSUMPTION: only veritcal moves'''
 def run(chessboard):
     global current_heuristic_cost
-    for row in range(len(chessboard)):
-        for col in range(len(chessboard[row])):
-            '''for each non-queen square'''
-            if chessboard[row][col][0] != "Q":
-                temp_chessboard = copy.deepcopy(chessboard)
-                temp_chessboard[row][col] = "Q"
-                for r in range(len(chessboard)):
-                    for c in range(len(chessboard[r])):
-                        if c == col:
-                            if chessboard[r][c][0] == "Q":
-                                temp_chessboard[r][c] = "H0"
-                conflicts = calculate_conflicts(temp_chessboard)
-                if conflicts == 0:
-                    print("********YAY**********")
-                    return chessboard
-                if current_heuristic_cost is not None and conflicts < current_heuristic_cost:
-                    chessboard = copy.deepcopy(temp_chessboard)
-                    current_heuristic_cost = conflicts
-                    print(current_heuristic_cost)
-                    continue
-                elif current_heuristic_cost is None and conflicts < initial_heuristic_cost:
-                    chessboard = copy.deepcopy(temp_chessboard)
-                    current_heuristic_cost = conflicts
-                else:
-                    continue
-                '''find the queen from the col and move it into chessboard[row][col]'''
+    global moves
+    global is_complete
+    global break_double_loop
+    while(not is_complete):
+        for row in range(len(chessboard)):
+            for col in range(len(chessboard[row])):
+                '''for each non-queen square'''
+                if chessboard[row][col][0] != "Q":
+                    '''try vertical moves first'''
+                    temp_chessboard = copy.deepcopy(chessboard)
+                    temp_chessboard[row][col] = "Q"
+                    for r in range(len(chessboard)):
+                        for c in range(len(chessboard[r])):
+                            if c == col and r != row:
+                                '''overwrite the original queen position with H0'''
+                                if chessboard[r][c][0] == "Q":
+                                    temp_chessboard[r][c] = "H0"
+                                    break_double_loop = True
+                                    break
+                        if break_double_loop:
+                            break
+                        else:
+                            continue
+                    break_double_loop = False
+                    conflicts = calculate_conflicts(temp_chessboard)
+                    if conflicts == 0:
+                        is_complete = True
+                        print("TOOK A MOVE")
+                        chessboard = copy.deepcopy(temp_chessboard)
+                        moves += 1
+                        print("********YAY**********")
+                        return chessboard
+                    if current_heuristic_cost is not None and conflicts < current_heuristic_cost:
+                        chessboard = copy.deepcopy(temp_chessboard)
+                        current_heuristic_cost = conflicts
+                        print("TOOK A MOVE")
+                        print_board(chessboard)
+                        moves += 1
+                        continue
+                    elif current_heuristic_cost is None and conflicts < initial_heuristic_cost:
+                        chessboard = copy.deepcopy(temp_chessboard)
+                        print("TOOK A MOVE")
+                        print_board(chessboard)
+                        moves += 1
+                        current_heuristic_cost = conflicts
+                        continue
+                    # '''try horizontal moves'''
+                    # temp_chessboard = copy.deepcopy(chessboard)
+                    # temp_chessboard[row][col] = "Q"
+                    # for r in range(len(chessboard)):
+                    #     for c in range(len(chessboard[r])):
+                    #         if r == row and c != col:
+                    #             if chessboard[r][c][0] == "Q":
+                    #                 temp_chessboard[r][c] = "H0"
+                    #                 break_double_loop = True
+                    #                 break
+                    #     if break_double_loop:
+                    #         break
+                    #     else:
+                    #         continue
+                    # break_double_loop = True
+                    # conflicts = calculate_conflicts(temp_chessboard)
+                    # if conflicts == 0:
+                    #     is_complete = True
+                    #     print("TOOK A HORIZONTAL MOVE")
+                    #     chessboard = copy.deepcopy(temp_chessboard)
+                    #     moves += 1
+                    #     print("********YAY**********")
+                    #     return chessboard
+                    # if current_heuristic_cost is not None and conflicts < current_heuristic_cost:
+                    #     chessboard = copy.deepcopy(temp_chessboard)
+                    #     current_heuristic_cost = conflicts
+                    #     print("TOOK A HORIZONTAL MOVE")
+                    #     print_board(chessboard)
+                    #     moves += 1
+                    #     continue
+                    # elif current_heuristic_cost is None and conflicts < initial_heuristic_cost:
+                    #     chessboard = copy.deepcopy(temp_chessboard)
+                    #     print("TOOK A HORIZONTAL MOVE")
+                    #     print_board(chessboard)
+                    #     moves += 1
+                    #     current_heuristic_cost = conflicts
+                    #     continue
     return chessboard
 
 def add_labels(chessboard):
@@ -129,4 +190,4 @@ if __name__ == '__main__':
     chessboard = run(chessboard)
     run_time = time.time() - start_time
     print_board(chessboard)
-    print("total cost:", current_heuristic_cost, "run time:", run_time)
+    print("total moves:", moves, "run time:", run_time)
