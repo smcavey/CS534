@@ -74,7 +74,7 @@ def find_upper_l(row,col,chessboard):
 
 def find_upper_r(row,col,chessboard):
     #find uppermost right diagonal
-    while row <0 and col < len(chessboard):
+    while row >0 and col < len(chessboard)-1:
         row -=1
         col+=1
     return [row,col]
@@ -108,7 +108,7 @@ def spot_conflict(chessboard):
                 rightMost = find_upper_r(row,col,chessboard)
                 rowMax = rightMost[0]
                 colMax = rightMost[1]
-                for x in range(0,colMax-rowMax):
+                for x in range(0,colMax-rowMax+1):
                     r= rowMax+x
                     c= colMax-x
                     if chessboard[r,c] != 0 and (r!=row and c!=col):
