@@ -22,6 +22,7 @@ import csv
 import random
 import math
 import copy
+import matplotlib.pyplot as plt
 
 
 
@@ -126,9 +127,16 @@ def sample(chessboard):
     
 
 '''ASSUMPTION: only single veritcal moves: see make_random_move()'''
-def run(chessboard):
+def run(chessboard,start_time):
+    current_time = time.time() - start_time
+    print(current_time)
+
+    if current_time >= 30:
+        return "Timed out", False
+
     temp = 10000000 #will always solve with v high temp for 7X7. Lower temp ok for smaller board
-    decay = 100
+    #decay = 100
+    decay = 0.95
     currentFit = 0 + spot_conflict(chessboard)
     
     moves = list()
@@ -163,14 +171,54 @@ def run(chessboard):
                 moves.append(moveText)
 
 
-        temp -=decay #decrease temperature
+        #temp -=decay #decrease temperature
+        temp = temp/(1+decay*temp)
     
-    return [chessboard, moves]
+    return [chessboard, moves], True
 
 
 def print_board(chessboard):
     for row in range(len(chessboard)):
         print(chessboard[row])
+
+def generate_random_board(n):
+    '''This function will generate a random board of size n'''
+    board = np.zeros((n, n))
+    board[np.random.choice(n, n, replace=False), np.arange(n)] = np.random.randint(1, 9,n)
+    return board
+
+def experiment(n, niters=20,seed = 1):
+    '''
+    this function will run the experiment niters times of the n-queen problem
+    '''
+    np.random.seed(seed)
+    count = 0
+    runtime = []
+    start_time = time.time()
+
+    for i in range(niters):
+        board = generate_random_board(n)
+        start_time = time.time()
+        _, isConverged = run(board,start_time)
+        end_time = time.time()
+        if isConverged:
+            count+=1
+            runtime.append(end_time-start_time)
+    return runtime,count/niters
+
+
+# if __name__ == '__main__':
+#     runtime, SUCCESS = experiment(5)
+#     #ploting
+#     #you need the array for n4-n17.
+#     boxplot = plt.violinplot([runtime],showmeans=True)
+#     #boxplot = df.boxplot(column=['4', '5', '6','7','8','9'],figsize = (12,12))
+#     plt.yscale('log')
+#     plt.ylim(0,1000)    
+#     plt.xlabel("n")
+#     plt.ylabel("time (s)")
+#     plt.title("Time used for solving n-queen problem with A* and horizontal moves enabled")
+#     plt.show()
 
 '''Starts the search~'''
 if __name__ == '__main__':
@@ -192,11 +240,12 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
     '''start time'''
     start_time = time.time()
-    result = run(chessboard)
+    result,_ = run(chessboard, start_time)
     end_time = time.time()
     print_board(result[0])
     #print(result[0])
     print("run-time:", end_time - start_time)
+    #result = [chessboard, list of moves], True
     print("moves: ", result[1])
     if spot_conflict(result[0]) == 0:
         print("YAY")

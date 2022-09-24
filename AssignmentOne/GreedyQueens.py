@@ -123,7 +123,13 @@ def get_current_cost(chessboard):
     return count_conflict(chessboard) 
 
 
-def run_Greedy(chessboard, fringe_chess, found_list):
+def run_Greedy(chessboard, fringe_chess, found_list, start_time):
+    current_time = time.time() - start_time
+    print(current_time)
+
+    if current_time >= 30:
+        return "Timed out", False
+
     a = True
     while a == True:
         chosen_chess = np.argmin(fringe_chess[:, 1])
@@ -131,10 +137,13 @@ def run_Greedy(chessboard, fringe_chess, found_list):
         print(found_list)
         for i in found_list:
             #print("AHHHH")
-            if np.array_equal(fringe_chess[chosen_chess, 0],i):
-                fringe_chess = np.delete(fringe_chess, chosen_chess, 0)
-                #print("QHY")
-                continue
+            try:
+                if np.array_equal(fringe_chess[chosen_chess, 0],i):
+                    fringe_chess = np.delete(fringe_chess, chosen_chess, 0)
+                    #print("QHY")
+                    continue
+            except IndexError:
+                return "Index Error", False
         print("HEY WHATSUP")
         found_list.append(fringe_chess[chosen_chess, 0])
         a = False
@@ -175,7 +184,35 @@ def run_Greedy(chessboard, fringe_chess, found_list):
     
         '''If no solution, restarts the search with all opened nodes in the fringe_chess array.'''
     else:
-        return run_Greedy(chessboard, fringe_chess, found_list)
+        return run_Greedy(chessboard, fringe_chess, found_list,start_time)
+
+def generate_random_board(n):
+    '''This function will generate a random board of size n'''
+    board = np.zeros((n, n))
+    board[np.random.choice(n, n, replace=False), np.arange(n)] = np.random.randint(1, 9,n)
+    return board
+
+def experiment(n, niters=20,seed = 1):
+    '''
+    this function will run the experiment niters times of the n-queen problem
+    '''
+    np.random.seed(seed)
+    count = 0
+    runtime = []
+    chessboard = generate_random_board(n)
+    fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard), ""]])
+    found_list = [0]
+    start_time = time.time()
+
+    for i in range(niters):
+        board = generate_random_board(n)
+        start_time = time.time()
+        _, isConverged = run_Astar(board, fringe_chess,found_list,start_time)
+        end_time = time.time()
+        if isConverged:
+            count+=1
+            runtime.append(end_time-start_time)
+    return runtime,count/niters
 
 '''Starts the search~'''
 if __name__ == '__main__':
@@ -201,7 +238,7 @@ if __name__ == '__main__':
     found_list = [0]
     '''start time'''
     start_time = time.time()
-    print(run_Greedy(chessboard, fringe_chess, found_list))
+    print(run_Greedy(chessboard, fringe_chess, found_list, start_time))
     end_time = time.time()
     print("run-time:", end_time - start_time)
 
