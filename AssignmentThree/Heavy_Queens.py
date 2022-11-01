@@ -114,8 +114,10 @@ def experiment(n, df, niters=20,seed = 1):
         fringe_chess = np.array([[board, 0, 0, get_current_cost(board), ""]])
         cost = int(run_Astar(board, fringe_chess,found_list,start_time))
         heaviest_queen_weight = np.amax(board)
-        #np.savetxt("foo.csv", board, delimiter=",", fmt='%1d')
-        temp = pd.DataFrame([[n,cost, heaviest_queen_weight]], columns=['n','cost', 'heaviest'])
+        i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
+        lightest_queen_weight = board[i]
+        flat = board.flatten()
+        temp = pd.DataFrame([[n,cost, heaviest_queen_weight, lightest_queen_weight]], columns=['n','cost', 'heaviest', 'lightest'])
         df = df.append(temp, ignore_index=True)
     return df
 
