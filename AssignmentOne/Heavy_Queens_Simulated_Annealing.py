@@ -112,13 +112,11 @@ def sample(chessboard):
     queen = random.choice(queens) #pick one
     
     moveCost = queen[2]**2 
-    #print(moveCost)
     move = make_random_move(chessboard,queen)
-    #print(move)
     newChessboard = move[0]
     moveText = move[1]
     heuristic = spot_conflict(newChessboard)
-    #print(heuristic)
+
     data.append(moveCost)
     data.append(heuristic)
     data.append(newChessboard)
@@ -220,32 +218,43 @@ def experiment(n, niters=20,seed = 1):
 #     plt.title("Time used for solving n-queen problem with A* and horizontal moves enabled")
 #     plt.show()
 
-'''Starts the search~'''
+
 if __name__ == '__main__':
-    '''select input csv'''
-    inp_path = askopenfilename()
-    print("user chose", inp_path)
-    try:
-        inp_csv = open(inp_path)
-    except IOError as e:
-        print(e)
-        sys.exit()
-    '''create chessboard'''
-    df = pd.read_csv(inp_path, delimiter=',', header=None)
-    chessboard = df.to_numpy()
-    '''convert nans to 0s'''
-    chessboard[np.isnan(chessboard)] = 0
-    #print(repr(chessboard))
-    '''suppress warnings'''
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
-    '''start time'''
-    start_time = time.time()
-    result,_ = run(chessboard, start_time)
-    end_time = time.time()
-    print_board(result[0])
-    #print(result[0])
-    print("run-time:", end_time - start_time)
-    #result = [chessboard, list of moves], True
-    print("moves: ", result[1])
-    if spot_conflict(result[0]) == 0:
-        print("YAY")
+    runtime, SUCCESS = experiment(8)
+    #ploting
+    #you need the array for n4-n17.
+    boxplot = plt.violinplot([runtime],showmeans=True)
+    #boxplot = df.boxplot(column=['4', '5', '6','7','8','9'],figsize = (12,12))
+    plt.yscale('log')
+    plt.ylim(0,1000)    
+    plt.xlabel("n")
+    plt.ylabel("time (s)")
+    plt.title("Time used for solving n-queen problem with Simulated Annealing")
+    plt.show()
+
+# '''Starts the search~'''
+# if __name__ == '__main__':
+#     '''select input csv'''
+#     inp_path = askopenfilename()
+#     print("user chose", inp_path)
+#     try:
+#         inp_csv = open(inp_path)
+#     except IOError as e:
+#         print(e)
+#         sys.exit()
+#     '''create chessboard'''
+#     df = pd.read_csv(inp_path, delimiter=',', header=None)
+#     chessboard = df.to_numpy()
+#     '''convert nans to 0s'''
+#     chessboard[np.isnan(chessboard)] = 0
+#     '''suppress warnings'''
+#     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+#     '''start time'''
+#     start_time = time.time()
+#     result,_ = run(chessboard, start_time)
+#     end_time = time.time()
+#     print_board(result[0])
+#     print("run-time:", end_time - start_time)
+#     print("moves: ", result[1])
+#     if spot_conflict(result[0]) == 0:
+#         print("YAY")

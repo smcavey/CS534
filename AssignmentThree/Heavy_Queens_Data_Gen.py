@@ -1,4 +1,5 @@
 from ast import Try
+from cmath import sqrt
 from sre_constants import SUCCESS
 import numpy as np
 from numpy import genfromtxt
@@ -10,6 +11,8 @@ import pandas as pd
 from tkinter.filedialog import askopenfilename
 import warnings
 import matplotlib.pyplot as plt
+import os
+import math
 
 def find_upper_l(row,col,chessboard):
     #find uppermost lef diagonal
@@ -60,6 +63,112 @@ def spot_conflict(chessboard):
                     if chessboard[r,c] != 0 and (r!=row and c!=col):
                         count +=1
     return(count)
+
+def conflict_stats(chessboard):
+    count = 0
+    sum = 0
+    lic = 1000
+    hic = 0
+    avg = 0
+    ldelta = 10000
+    hdelta = 0
+    cdelta = 0
+    avgDelta = 0
+
+    #for every space
+    for row in range(len(chessboard)):
+        for col in range(len(chessboard)):
+            if chessboard[row][col] !=0: #IF YOU FIND A QUEEN
+                #check row 
+                for i in range(len(chessboard)):
+                    if chessboard[row,i] !=0 and i!= col:
+                        count +=1
+                        sum += chessboard[row,i]
+                        #distance
+                        delta = abs(col-i)
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                        #highest and lowest conflict
+                        if chessboard[row,i] > hic:
+                            hic = chessboard[row,i]
+                        if chessboard[row,i] < lic and chessboard[row,i] != 0:
+                            lic = chessboard[row,i]
+
+                #check column 
+                for j in range(len(chessboard)):
+                    if chessboard[j,col] !=0 and j!= row:
+                        count +=1
+                        sum += chessboard[j,col]
+                        #distance
+                        delta = abs(row-j)
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                        #highest and lowest conflict
+                        if chessboard[j,col] > hic:
+                            hic = chessboard[j,col]
+                        if chessboard[j,col] < lic and chessboard[j,col] != 0:
+                            lic = chessboard[j,col]
+                
+                #check L diag
+                leftMost = find_upper_l(row,col,chessboard)
+                rowMax = leftMost[0]
+                colMax = leftMost[1]
+                for x in range(0,len(chessboard)-max(rowMax,colMax)):
+                    r= rowMax+x
+                    c= colMax+x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+                        sum += chessboard[r,c]
+                        #distance
+                        delta = math.sqrt(((row-r)**2 + (col-c)**2))
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                        #highest and lowest conflict
+                        if chessboard[r,c] > hic:
+                            hic = chessboard[r,c]
+                        if chessboard[r,c] < lic and chessboard[r,c] != 0:
+                            lic = chessboard[r,c]
+
+                #check R diag
+                rightMost = find_upper_r(row,col,chessboard)
+                rowMax = rightMost[0]
+                colMax = rightMost[1]
+                for x in range(0,colMax-rowMax+1):
+                    r= rowMax+x
+                    c= colMax-x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+                        sum += chessboard[r,c]
+                        #distance
+                        delta = math.sqrt(((row-r)**2 + (col-c)**2))
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                        #highest and lowest conflict
+                        if chessboard[r,c] > hic:
+                            hic = chessboard[r,c]
+                        if chessboard[r,c] < lic and chessboard[r,c] != 0:
+                            lic = chessboard[r,c]
+   
+    if count != 0:
+        avg = sum/count
+        avgDelta = cdelta/count
+    if lic == 1000:
+        lic = 0
+    if ldelta == 10000:
+        ldelta = 0
+    return([lic, hic, avg, ldelta, hdelta, avgDelta, count])
 
 def get_current_cost(chessboard):
     return spot_conflict(chessboard) 
@@ -137,7 +246,10 @@ def string_to_numpy(string):
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
     warnings.simplefilter(action='ignore', category=FutureWarning)
-    inp = pd.read_csv('test.csv')
+    dir = os.path.dirname(os.path.abspath(__file__))
+    data = 'board_scores.csv'
+    inPath = os.path.join(dir, data)
+    inp = pd.read_csv(inPath)
     out = pd.DataFrame()
     for index, row in inp.iterrows(): # do work
         values = [] # df values
@@ -174,18 +286,32 @@ if __name__ == '__main__':
         avg = np.average(board)
         values.append(avg)
         cols.append('average value including 0')
-        # attribute 8 - lightest value in conflict
-        # TODO
+        #conflict statistics
+        con_stats = conflict_stats(board)
+        # attribute 8 - lightest queen in conflict
+        lic = con_stats[0]
+        values.append(lic)
+        cols.append('lightest in conflict')
         # attribute 9 - heaviest queen in conflict
-        # TODO
+        hic = con_stats[1]
+        values.append(hic)
+        cols.append('heaviest in conflict')
         # attribute 10 - average weight of queens in conflict
-        # TODO
+        avgC = con_stats[2]
+        values.append(avgC)
+        cols.append('average in conflict')
         # attribute 11 - smallest distance between conflict
-        # TODO
+        lDel = con_stats[3]
+        values.append(lDel)
+        cols.append('smallest d in conflict')
         # attribute 12 - largest distance between conflict
-        # TODO
+        hDel = con_stats[4]
+        values.append(hDel)
+        cols.append('largest d in conflict')
         # attribute 13 - average distance between conflicts
-        # TODO
+        avgD = con_stats[5]
+        values.append(avgD)
+        cols.append('average d in conflict')
         # attribute 14 - row with most queens
         # TODO
         # attribute 15 - row with least queens
@@ -199,4 +325,7 @@ if __name__ == '__main__':
         # build data frame
         temp = pd.DataFrame([values], columns=cols)
         out = out.append(temp, ignore_index=True)
-    out.to_csv('attributes.csv')
+    print ("Im done")
+    attributes = 'attributes.csv'
+    outPath = os.path.join(dir, attributes)
+    out.to_csv(outPath)
