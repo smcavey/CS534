@@ -2,6 +2,7 @@ from ast import Try
 from sre_constants import SUCCESS
 import numpy as np
 from numpy import genfromtxt
+from numpy import unravel_index
 import ast
 import sys
 import time
@@ -123,6 +124,15 @@ def generate_random_board(n):
     board = np.zeros((n, n))
     board[np.random.choice(n, n, replace=False), np.arange(n)] = np.random.randint(1, 9,n)
     return board
+    
+def string_to_numpy(string):
+  L = []
+  for i in range(string.count('\n')+ 1):
+    l = string.replace('[[','[').replace(']]',']').split('\n')[i].replace(' ','').replace('[','').replace(']','').split('.')[:-1]
+    for j,x in enumerate(l):
+      l[j] = int(x)
+    L.append(np.array(l,dtype=int))
+  return np.array(L)
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
@@ -132,21 +142,61 @@ if __name__ == '__main__':
     for index, row in inp.iterrows(): # do work
         values = [] # df values
         cols = [] # df col titles
-        board = row['board']
-        #board = board.replace('.', ',')
-        new = None
-        for row in board:
-            temp = row + ','
-            new = ''.join(temp)
-        board = new
-        board = genfromtxt(board, delimiter=',')
-        print(board)
-        cost = row['cost'] # target variable
+        board = string_to_numpy(row['board'])
+        # target variable - solved path cost
+        cost = row['cost']
         values.append(cost)
         cols.append('cost')
+        # attribute 1 - heaviest queen weight
         heaviestQueenWeight = np.amax(board)
         values.append(heaviestQueenWeight)
         cols.append('heaviest queen weight')
+        # attribute 2 - heaviest queen location
+        values.append(unravel_index(board.argmax(), board.shape))
+        cols.append('location of heaviest queen')
+        # attribute 3 - lightest queen
+        i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
+        lightestQueen = board[i]
+        values.append(lightestQueen)
+        cols.append('lightest queen weight')
+        # attribute 4 - location of lightest queen
+        values.append(i)
+        cols.append('location of lightest queen')
+        # attribute 5 - initial conflict
+        initialConflict = spot_conflict(board)
+        values.append(initialConflict)
+        cols.append('initial conflicts')
+        # attribute 6 - n
+        n = board.shape[0]
+        values.append(n)
+        cols.append('n')
+        # attribute 7 - average values including 0s
+        avg = np.average(board)
+        values.append(avg)
+        cols.append('average value including 0')
+        # attribute 8 - lightest value in conflict
+        # TODO
+        # attribute 9 - heaviest queen in conflict
+        # TODO
+        # attribute 10 - average weight of queens in conflict
+        # TODO
+        # attribute 11 - smallest distance between conflict
+        # TODO
+        # attribute 12 - largest distance between conflict
+        # TODO
+        # attribute 13 - average distance between conflicts
+        # TODO
+        # attribute 14 - row with most queens
+        # TODO
+        # attribute 15 - row with least queens
+        # TODO
+        # attribute 16 - count of empty rows (row only has 0s)
+        # TODO
+        # attribute 17 - most queens in a row
+        # TODO
+        # attribute 18 - average queens in a row
+        # TODO
+        # build data frame
         temp = pd.DataFrame([values], columns=cols)
         out = out.append(temp, ignore_index=True)
     out.to_csv('attributes.csv')
