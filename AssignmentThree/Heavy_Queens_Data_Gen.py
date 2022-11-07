@@ -74,6 +74,13 @@ def conflict_stats(chessboard):
     hdelta = 0
     cdelta = 0
     avgDelta = 0
+    erows = 0
+    mqueen_c = 0
+    mqueen = 0
+    lqueen_c = 15
+    lqueen = 0
+    avgqueens = 0
+    nzrow = 0
 
     #for every space
     for row in range(len(chessboard)):
@@ -160,7 +167,17 @@ def conflict_stats(chessboard):
                             hic = chessboard[r,c]
                         if chessboard[r,c] < lic and chessboard[r,c] != 0:
                             lic = chessboard[r,c]
-   
+        if np.sum(chessboard[row]) == 0:
+            erows += 1
+        if np.count_nonzero(chessboard[row]) > mqueen_c:
+            mqueen_c = np.count_nonzero(chessboard[row])
+            mqueen = row
+        if np.count_nonzero(chessboard[row]) < lqueen_c:
+            lqueen_c = np.count_nonzero(chessboard[row])
+            lqueen = row
+        if np.sum(chessboard[row]) != 0:
+            avgqueens += np.count_nonzero(chessboard[row])
+            nzrow += 1
     if count != 0:
         avg = sum/count
         avgDelta = cdelta/count
@@ -168,7 +185,8 @@ def conflict_stats(chessboard):
         lic = 0
     if ldelta == 10000:
         ldelta = 0
-    return([lic, hic, avg, ldelta, hdelta, avgDelta, count])
+    avgqueens = avgqueens / nzrow
+    return([lic, hic, avg, ldelta, hdelta, avgDelta, count, mqueen, lqueen, erows, mqueen_c, lqueen_c, avgqueens])
 
 def get_current_cost(chessboard):
     return spot_conflict(chessboard) 
@@ -313,15 +331,29 @@ if __name__ == '__main__':
         values.append(avgD)
         cols.append('average d in conflict')
         # attribute 14 - row with most queens
-        # TODO
+        mqueen = con_stats[7]
+        values.append(mqueen)
+        cols.append('row with most queens')
         # attribute 15 - row with least queens
-        # TODO
+        lqueen = con_stats[8]
+        values.append(lqueen)
+        cols.append('row with least queens')
         # attribute 16 - count of empty rows (row only has 0s)
-        # TODO
+        erow = con_stats[9]
+        values.append(erow)
+        cols.append('num empty rows')
         # attribute 17 - most queens in a row
-        # TODO
-        # attribute 18 - average queens in a row
-        # TODO
+        mqueen_c = con_stats[10]
+        values.append(mqueen_c)
+        cols.append('most queens in row')
+        # attribute 18 - least queens in a row
+        lqueen_c = con_stats[11]
+        values.append(lqueen_c)
+        cols.append('least queens in row')
+        # attribute 19 - average queens in a nonzero row
+        avgqueens = con_stats[12]
+        values.append(avgqueens)
+        cols.append('avg queens in nonzero row')
         # build data frame
         temp = pd.DataFrame([values], columns=cols)
         out = out.append(temp, ignore_index=True)
