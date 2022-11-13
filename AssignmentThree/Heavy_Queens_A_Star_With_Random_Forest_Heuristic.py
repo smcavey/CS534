@@ -8,6 +8,22 @@ from tkinter.filedialog import askopenfilename
 import warnings
 import matplotlib.pyplot as plt
 import pickle
+import os
+import math
+
+def find_upper_l(row,col,chessboard):
+    #find uppermost lef diagonal
+    while col >0 and row !=0:
+        row -=1
+        col-=1
+    return [row,col]
+
+def find_upper_r(row,col,chessboard):
+    #find uppermost right diagonal
+    while row !=0 and col < len(chessboard)-1:
+        row -=1
+        col+=1
+    return [row,col]
 
 def conflict_stats(chessboard):
     count = 0
@@ -142,7 +158,7 @@ def get_current_cost(chessboard, model):
     values.append(heaviestQueenWeight)
     # cols.append('heaviest queen weight')
     # attribute 2 - heaviest queen location
-    values.append(unravel_index(board.argmax(), board.shape))
+    values.append(np.unravel_index(board.argmax(), board.shape))
     # cols.append('location of heaviest queen')
     # attribute 3 - lightest queen
     i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
@@ -153,7 +169,7 @@ def get_current_cost(chessboard, model):
     values.append(i)
     # cols.append('location of lightest queen')
     # attribute 5 - initial conflict
-    initialConflict = spot_conflict(board)
+    initialConflict = conflict_stats(board)[6]
     values.append(initialConflict)
     # cols.append('initial conflicts')
     # attribute 6 - n
@@ -271,7 +287,7 @@ def experiment(n, model, niters=20,seed = 1):
     count = 0
     runtime = []
     chessboard = generate_random_board(n)
-    fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard), ""]])
+    fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard,model), ""]])
     found_list = [0]
     start_time = time.time()
 
@@ -287,7 +303,10 @@ def experiment(n, model, niters=20,seed = 1):
 
 
 if __name__ == '__main__':
-    with open('model.pkl','rb') as f:
+    dir = os.path.dirname(os.path.abspath(__file__))
+    model = 'model.pkl'
+    modelPath = os.path.join(dir, model)
+    with open(modelPath,'rb') as f:
         model = pickle.load(f)
     runtime, SUCCESS = experiment(5, model)
     print('runtime:', runtime, 'success rate:', SUCCESS)
