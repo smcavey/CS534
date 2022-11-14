@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 import math
+from sklearn.ensemble import RandomForestClassifier
 
 def find_upper_l(row,col,chessboard):
     #find uppermost lef diagonal
@@ -205,9 +206,17 @@ def get_current_cost(chessboard, model):
     # attribute 13 - average distance between conflicts
     avgD = con_stats[5]
     values.append(avgD)
+    temp = convert_float(values[1])
+    values[1] = temp
+    temp = convert_float(values[3])
+    values[3] = temp
+    values = np.array(values)
+    values = values.reshape(1, -1)
     # cols.append('average d in conflict')
     # data to feed into model to get output
-    return model.predict(values)
+    cost = int(model.predict(values))
+    print('cost', cost)
+    return cost
 
 def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
     model = model
@@ -221,7 +230,7 @@ def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
     while a == True:
         chosen_chess = np.argmin(fringe_chess[:, 1])
         #print("HEY LISTEN")
-        print(found_list)
+        #print(found_list)
         for i in found_list:
             #print("AHHHH")
             try:
@@ -244,12 +253,12 @@ def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
                     temp_chess = np.copy(fringe_chess[chosen_chess, 0])
                     temp_chess[j, i], temp_chess[k, i] = temp_chess[k, i], temp_chess[j, i]
                     '''to get a greedy best-first approach is it as simple as cutting off one end of the below '+' symbol?'''
-                    cost = abs(j - k) * (fringe_chess[chosen_chess, 0][j, i] ** 2) + get_current_cost(temp_chess) + fringe_chess[chosen_chess, 2]
+                    cost = abs(j - k) * (fringe_chess[chosen_chess, 0][j, i] ** 2) + get_current_cost(temp_chess, model) + fringe_chess[chosen_chess, 2]
                     fringe_chess = np.append(fringe_chess, np.array([[temp_chess, cost, abs(j - k) * (fringe_chess[chosen_chess, 0][j, i] ** 2) + fringe_chess[chosen_chess, 2], get_current_cost(temp_chess, model), fringe_chess[chosen_chess, 4] + "Move {},{} to {},{}. ".format(j, i, k, i)]]), axis=0)
     fringe_chess = np.delete(fringe_chess, chosen_chess, 0)
     
     '''Comment out if you only wanna print the final solution'''
-    print(fringe_chess)
+    #print(fringe_chess)
     
     '''Checks to see if a solution is found and returns the min solution if there is a solution.'''
     if 0 in fringe_chess[:, 3]:
@@ -270,7 +279,7 @@ def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
     
         '''If no solution, restarts the search with all opened nodes in the fringe_chess array.'''
     else:
-        return run_Astar(chessboard, fringe_chess,found_list,start_time)
+        return run_Astar(chessboard, fringe_chess,found_list,start_time, model)
 
 def generate_random_board(n):
     '''This function will generate a random board of size n'''
@@ -301,12 +310,30 @@ def experiment(n, model, niters=20,seed = 1):
             runtime.append(end_time-start_time)
     return runtime,count/niters
 
+def convert_float(inp):
+    inp = str(inp)
+    inp = inp.replace("(", "")
+    inp = inp.replace(")", "")
+    splitted_data = inp.split(",")
+    temp = str(splitted_data[0] + '.' + splitted_data[1])
+    temp = temp.replace(" ", "")
+    return temp
 
 if __name__ == '__main__':
-    dir = os.path.dirname(os.path.abspath(__file__))
-    model = 'model.pkl'
-    modelPath = os.path.join(dir, model)
-    with open(modelPath,'rb') as f:
-        model = pickle.load(f)
+    # dir = os.path.dirname(os.path.abspath(__file__))
+    # model = 'model.pkl'
+    # modelPath = os.path.join(dir, model)
+    # with open(modelPath,'rb') as f:
+    # model = pickle.load(f)
+    data = pd.read_csv('attributes.csv')
+    # train the model
+    Y = data['cost']
+    X = data.loc[:, data.columns != 'cost']
+    X = X.drop(columns=['row with most queens', 'row with least queens', 'num empty rows', 'most queens in row', 'least queens in row', 'avg queens in nonzero row'])
+    # convert coordiinates to floats
+    X['location of heaviest queen'] = X['location of heaviest queen'].apply(lambda x: convert_float(x))
+    X['location of lightest queen'] = X['location of lightest queen'].apply(lambda x: convert_float(x))
+    model = RandomForestClassifier(max_depth=10)
+    model.fit(X, Y)
     runtime, SUCCESS = experiment(5, model)
-    print('runtime:', runtime, 'success rate:', SUCCESS)
+    #print('runtime:', runtime, 'success rate:', SUCCESS)
