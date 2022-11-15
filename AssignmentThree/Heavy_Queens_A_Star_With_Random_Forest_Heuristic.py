@@ -214,16 +214,16 @@ def get_current_cost(chessboard, model):
     values = values.reshape(1, -1)
     # cols.append('average d in conflict')
     # data to feed into model to get output
-    cost = int(model.predict(values))
-    print('cost', cost)
+    cost = int(model.predict( values ))
+    # print('cost', cost)
     return cost
 
 def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
     model = model
     current_time = time.time() - start_time
-    print(current_time)
+    print('current time', current_time)
 
-    if current_time >= 30:
+    if current_time >= 120:
         return "Timed out", False
 
     a = True
@@ -287,7 +287,7 @@ def generate_random_board(n):
     board[np.random.choice(n, n, replace=False), np.arange(n)] = np.random.randint(1, 9,n)
     return board
 
-def experiment(n, model, niters=20,seed = 1):
+def experiment(n, model, niters=10,seed = 1):
     '''
     this function will run the experiment niters times of the n-queen problem
     '''
@@ -295,15 +295,16 @@ def experiment(n, model, niters=20,seed = 1):
     np.random.seed(seed)
     count = 0
     runtime = []
-    chessboard = generate_random_board(n)
-    fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard,model), ""]])
-    found_list = [0]
-    start_time = time.time()
 
+    found_list = [0]
     for i in range(niters):
-        board = generate_random_board(n)
+        chessboard = generate_random_board(n)
+        fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard,model), ""]])
         start_time = time.time()
-        _, isConverged = run_Astar(board, fringe_chess,found_list,start_time, model)
+        isConverged = None
+        print('i', i)
+        start_time = time.time()
+        _, isConverged = run_Astar(chessboard, fringe_chess,found_list,start_time, model)
         end_time = time.time()
         if isConverged:
             count+=1
@@ -320,6 +321,7 @@ def convert_float(inp):
     return temp
 
 if __name__ == '__main__':
+    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
     # dir = os.path.dirname(os.path.abspath(__file__))
     # model = 'model.pkl'
     # modelPath = os.path.join(dir, model)
@@ -334,6 +336,7 @@ if __name__ == '__main__':
     X['location of heaviest queen'] = X['location of heaviest queen'].apply(lambda x: convert_float(x))
     X['location of lightest queen'] = X['location of lightest queen'].apply(lambda x: convert_float(x))
     model = RandomForestClassifier(max_depth=10)
+    X = X.values
     model.fit(X, Y)
     runtime, SUCCESS = experiment(5, model)
-    #print('runtime:', runtime, 'success rate:', SUCCESS)
+    print('runtime:', runtime, 'success rate:', SUCCESS)
