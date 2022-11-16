@@ -35,6 +35,10 @@ def conflict_stats(chessboard):
     ldelta = 10000
     hdelta = 0
     cdelta = 0
+    ldeltar = 0
+    ldeltac = 0
+    hdeltar = 0
+    ldeltac = 0
     avgDelta = 0
     erows = 0
     mqueen_c = 0
@@ -58,8 +62,10 @@ def conflict_stats(chessboard):
                         cdelta += delta
                         if delta > hdelta:
                             hdelta = delta
+                            hdeltac = delta
                         if delta < ldelta:
                             ldelta = delta
+                            ldeltac = delta
                         #highest and lowest conflict
                         if chessboard[row,i] > hic:
                             hic = chessboard[row,i]
@@ -76,8 +82,10 @@ def conflict_stats(chessboard):
                         cdelta += delta
                         if delta > hdelta:
                             hdelta = delta
+                            hdeltar = delta
                         if delta < ldelta:
                             ldelta = delta
+                            ldeltar = delta
                         #highest and lowest conflict
                         if chessboard[j,col] > hic:
                             hic = chessboard[j,col]
@@ -99,8 +107,12 @@ def conflict_stats(chessboard):
                         cdelta += delta
                         if delta > hdelta:
                             hdelta = delta
+                            hdeltar = row-r
+                            hdeltac = col-c
                         if delta < ldelta:
                             ldelta = delta
+                            ldeltar = row-r
+                            ldeltac = col-c
                         #highest and lowest conflict
                         if chessboard[r,c] > hic:
                             hic = chessboard[r,c]
@@ -122,8 +134,12 @@ def conflict_stats(chessboard):
                         cdelta += delta
                         if delta > hdelta:
                             hdelta = delta
+                            hdeltar = row-r
+                            hdeltac = col-c
                         if delta < ldelta:
                             ldelta = delta
+                            ldeltar = row-r
+                            ldeltac = col-c
                         #highest and lowest conflict
                         if chessboard[r,c] > hic:
                             hic = chessboard[r,c]
@@ -148,7 +164,7 @@ def conflict_stats(chessboard):
     if ldelta == 10000:
         ldelta = 0
     avgqueens = avgqueens / nzrow
-    return([lic, hic, avg, ldelta, hdelta, avgDelta, count])
+    return([lic, hic, avg, ldelta, ldeltar, ldeltac, hdelta, hdeltar, hdeltac, avgDelta, count])
 
 def get_current_cost(chessboard, model):
     values = [] # df values
@@ -158,54 +174,77 @@ def get_current_cost(chessboard, model):
     heaviestQueenWeight = np.amax(board)
     values.append(heaviestQueenWeight)
     # cols.append('heaviest queen weight')
-    # attribute 2 - heaviest queen location
-    values.append(np.unravel_index(board.argmax(), board.shape))
-    # cols.append('location of heaviest queen')
-    # attribute 3 - lightest queen
+    # attribute 2 - heaviest queen row location
+    values.append(np.unravel_index(board.argmax(), board.shape)[0])
+    # cols.append('row location of heaviest queen')
+    # attribute 3 - heaviest queen col location
+    values.append(np.unravel_index(board.argmax(), board.shape)[1])
+    # cols.append('col location of heaviest queen')
+    # attribute 4 - lightest queen
     i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
     lightestQueen = board[i]
     values.append(lightestQueen)
     # cols.append('lightest queen weight')
-    # attribute 4 - location of lightest queen
-    values.append(i)
-    # cols.append('location of lightest queen')
-    # attribute 5 - initial conflict
-    initialConflict = conflict_stats(board)[6]
+    # attribute 5 - lightest queen row location
+    values.append(i[0])
+    # cols.append('row location of lightest queen')
+    # attribute 6 - lightest queen col location
+    values.append(i[1])
+    # cols.append('col location of lightest queen')
+    # attribute 7 - initial conflict
+    initialConflict = conflict_stats(board)[10]
     values.append(initialConflict)
     # cols.append('initial conflicts')
-    # attribute 6 - n
+    # attribute 8 - n
     n = board.shape[0]
     values.append(n)
     # cols.append('n')
-    # attribute 7 - average values including 0s
+    # attribute 9 - average values including 0s
     avg = np.average(board)
     values.append(avg)
     # cols.append('average value including 0')
     #conflict statistics
     con_stats = conflict_stats(board)
-    # attribute 8 - lightest queen in conflict
+    # attribute 10 - lightest queen in conflict
     lic = con_stats[0]
     values.append(lic)
     # cols.append('lightest in conflict')
-    # attribute 9 - heaviest queen in conflict
+    # attribute 11 - heaviest queen in conflict
     hic = con_stats[1]
     values.append(hic)
     # cols.append('heaviest in conflict')
-    # attribute 10 - average weight of queens in conflict
+    # attribute 12 - average weight of queens in conflict
     avgC = con_stats[2]
     values.append(avgC)
     # cols.append('average in conflict')
-    # attribute 11 - smallest distance between conflict
+    # attribute 13 - smallest distance between conflict- vector
     lDel = con_stats[3]
     values.append(lDel)
     # cols.append('smallest d in conflict')
-    # attribute 12 - largest distance between conflict
-    hDel = con_stats[4]
+    # attribute 14 - smallest row distance between conflict
+    lDelr = con_stats[4]
+    values.append(lDelr)
+    # cols.append('smallest row d in conflict')
+    # attribute 15 - smallest col distance between conflict
+    lDelc = con_stats[5]
+    values.append(lDelc)
+    # cols.append('smallest d in conflict')
+    # attribute 16 - largest distance between conflict
+    hDel = con_stats[6]
     values.append(hDel)
     # cols.append('largest d in conflict')
-    # attribute 13 - average distance between conflicts
-    avgD = con_stats[5]
+    # attribute 17 - largest row distance between conflict
+    hDelr = con_stats[7]
+    values.append(hDelr)
+    # cols.append('largest row d in conflict')
+    # attribute 18 - largest col distance between conflict
+    hDelc = con_stats[8]
+    values.append(hDelc)
+    # cols.append('largest d in conflict')
+    # attribute 19 - average distance between conflicts
+    avgD = con_stats[9]
     values.append(avgD)
+
     temp = convert_float(values[1])
     values[1] = temp
     temp = convert_float(values[3])
