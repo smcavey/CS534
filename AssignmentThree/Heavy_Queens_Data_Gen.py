@@ -261,99 +261,258 @@ def string_to_numpy(string):
     L.append(np.array(l,dtype=int))
   return np.array(L)
 
+def conflict_stats(chessboard):
+    count = 0
+    sum = 0
+    lic = 1000
+    hic = 0
+    avg = 0
+    ldelta = 10000
+    hdelta = 0
+    cdelta = 0
+    ldeltar = 0
+    ldeltac = 0
+    hdeltar = 0
+    ldeltac = 0
+    hdeltac = 0
+    avgDelta = 0
+    erows = 0
+    mqueen_c = 0
+    mqueen = 0
+    lqueen_c = 15
+    lqueen = 0
+    avgqueens = 0
+    nzrow = 0
+
+    #for every space
+    for row in range(len(chessboard)):
+        for col in range(len(chessboard)):
+            if chessboard[row][col] !=0: #IF YOU FIND A QUEEN
+                #check row 
+                for i in range(len(chessboard)):
+                    if chessboard[row,i] !=0 and i!= col:
+                        count +=1
+                        sum += chessboard[row,i]
+                        #distance
+                        delta = abs(col-i)
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                            hdeltac = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                            ldeltac = delta
+                        #highest and lowest conflict
+                        if chessboard[row,i] > hic:
+                            hic = chessboard[row,i]
+                        if chessboard[row,i] < lic and chessboard[row,i] != 0:
+                            lic = chessboard[row,i]
+
+                #check column 
+                for j in range(len(chessboard)):
+                    if chessboard[j,col] !=0 and j!= row:
+                        count +=1
+                        sum += chessboard[j,col]
+                        #distance
+                        delta = abs(row-j)
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                            hdeltar = delta
+                        if delta < ldelta:
+                            ldelta = delta
+                            ldeltar = delta
+                        #highest and lowest conflict
+                        if chessboard[j,col] > hic:
+                            hic = chessboard[j,col]
+                        if chessboard[j,col] < lic and chessboard[j,col] != 0:
+                            lic = chessboard[j,col]
+                
+                #check L diag
+                leftMost = find_upper_l(row,col,chessboard)
+                rowMax = leftMost[0]
+                colMax = leftMost[1]
+                for x in range(0,len(chessboard)-max(rowMax,colMax)):
+                    r= rowMax+x
+                    c= colMax+x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+                        sum += chessboard[r,c]
+                        #distance
+                        delta = math.sqrt(((row-r)**2 + (col-c)**2))
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                            hdeltar = row-r
+                            hdeltac = col-c
+                        if delta < ldelta:
+                            ldelta = delta
+                            ldeltar = row-r
+                            ldeltac = col-c
+                        #highest and lowest conflict
+                        if chessboard[r,c] > hic:
+                            hic = chessboard[r,c]
+                        if chessboard[r,c] < lic and chessboard[r,c] != 0:
+                            lic = chessboard[r,c]
+
+                #check R diag
+                rightMost = find_upper_r(row,col,chessboard)
+                rowMax = rightMost[0]
+                colMax = rightMost[1]
+                for x in range(0,colMax-rowMax+1):
+                    r= rowMax+x
+                    c= colMax-x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+                        sum += chessboard[r,c]
+                        #distance
+                        delta = math.sqrt(((row-r)**2 + (col-c)**2))
+                        cdelta += delta
+                        if delta > hdelta:
+                            hdelta = delta
+                            hdeltar = row-r
+                            hdeltac = col-c
+                        if delta < ldelta:
+                            ldelta = delta
+                            ldeltar = row-r
+                            ldeltac = col-c
+                        #highest and lowest conflict
+                        if chessboard[r,c] > hic:
+                            hic = chessboard[r,c]
+                        if chessboard[r,c] < lic and chessboard[r,c] != 0:
+                            lic = chessboard[r,c]
+        if np.sum(chessboard[row]) == 0:
+            erows += 1
+        if np.count_nonzero(chessboard[row]) > mqueen_c:
+            mqueen_c = np.count_nonzero(chessboard[row])
+            mqueen = row
+        if np.count_nonzero(chessboard[row]) < lqueen_c:
+            lqueen_c = np.count_nonzero(chessboard[row])
+            lqueen = row
+        if np.sum(chessboard[row]) != 0:
+            avgqueens += np.count_nonzero(chessboard[row])
+            nzrow += 1
+    if count != 0:
+        avg = sum/count
+        avgDelta = cdelta/count
+    if lic == 1000:
+        lic = 0
+    if ldelta == 10000:
+        ldelta = 0
+    avgqueens = avgqueens / nzrow
+    return([lic, hic, avg, ldelta, ldeltar, ldeltac, hdelta, hdeltar, hdeltac, avgDelta, count])
+
+def get_current_cost(chessboard):
+    values = [] # df values
+    cols = [] # df col titles
+    board = chessboard
+    # attribute 1 - heaviest queen weight
+    heaviestQueenWeight = np.amax(board)
+    values.append(heaviestQueenWeight)
+    cols.append('heaviest queen weight')
+    # attribute 2 - heaviest queen row location
+    values.append(np.unravel_index(board.argmax(), board.shape)[0])
+    cols.append('row location of heaviest queen')
+    # attribute 3 - heaviest queen col location
+    values.append(np.unravel_index(board.argmax(), board.shape)[1])
+    cols.append('col location of heaviest queen')
+    # attribute 4 - lightest queen
+    i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
+    lightestQueen = board[i]
+    values.append(lightestQueen)
+    cols.append('lightest queen weight')
+    # attribute 5 - lightest queen row location
+    values.append(i[0])
+    cols.append('row location of lightest queen')
+    # attribute 6 - lightest queen col location
+    values.append(i[1])
+    cols.append('col location of lightest queen')
+    # attribute 7 - initial conflict
+    initialConflict = conflict_stats(board)[10]
+    values.append(initialConflict)
+    cols.append('initial conflicts')
+    # attribute 8 - n
+    n = board.shape[0]
+    values.append(n)
+    cols.append('n')
+    # attribute 9 - average values including 0s
+    avg = np.average(board)
+    values.append(avg)
+    cols.append('average value including 0')
+    #conflict statistics
+    con_stats = conflict_stats(board)
+    # attribute 10 - lightest queen in conflict
+    lic = con_stats[0]
+    values.append(lic)
+    cols.append('lightest in conflict')
+    # attribute 11 - heaviest queen in conflict
+    hic = con_stats[1]
+    values.append(hic)
+    cols.append('heaviest in conflict')
+    # attribute 12 - average weight of queens in conflict
+    avgC = con_stats[2]
+    values.append(avgC)
+    cols.append('average in conflict')
+    # attribute 13 - smallest distance between conflict- vector
+    lDel = con_stats[3]
+    values.append(lDel)
+    cols.append('smallest d in conflict')
+    # attribute 14 - smallest row distance between conflict
+    lDelr = con_stats[4]
+    values.append(lDelr)
+    cols.append('smallest row d in conflict')
+    # attribute 15 - smallest col distance between conflict
+    lDelc = con_stats[5]
+    values.append(lDelc)
+    cols.append('smallest d in conflict')
+    # attribute 16 - largest distance between conflict
+    hDel = con_stats[6]
+    values.append(hDel)
+    cols.append('largest d in conflict')
+    # attribute 17 - largest row distance between conflict
+    hDelr = con_stats[7]
+    values.append(hDelr)
+    cols.append('largest row d in conflict')
+    # attribute 18 - largest col distance between conflict
+    hDelc = con_stats[8]
+    values.append(hDelc)
+    cols.append('largest d in conflict')
+    # attribute 19 - average distance between conflicts
+    avgD = con_stats[9]
+    values.append(avgD)
+    cols.append('average d in conflict')
+    # target attribute - cost
+    cost = spot_conflict(board)
+    values.append(cost)
+    cols.append('cost')
+
+    # temp = convert_float(values[1])
+    # values[1] = temp
+    # temp = convert_float(values[3])
+    # values[3] = temp
+    
+    return values, cols
+    
+def convert_float(inp):
+    inp = str(inp)
+    inp = inp.replace("(", "")
+    inp = inp.replace(")", "")
+    splitted_data = inp.split(",")
+    temp = str(splitted_data[0] + '.' + splitted_data[1])
+    temp = temp.replace(" ", "")
+    return temp
+
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
     warnings.simplefilter(action='ignore', category=FutureWarning)
     dir = os.path.dirname(os.path.abspath(__file__))
-    data = 'board_scores.csv'
+    data = 'tuples.csv'
     inPath = os.path.join(dir, data)
     inp = pd.read_csv(inPath)
     out = pd.DataFrame()
     for index, row in inp.iterrows(): # do work
-        values = [] # df values
-        cols = [] # df col titles
         board = string_to_numpy(row['board'])
-        # target variable - solved path cost
-        cost = row['cost']
-        values.append(cost)
-        cols.append('cost')
-        # attribute 1 - heaviest queen weight
-        heaviestQueenWeight = np.amax(board)
-        values.append(heaviestQueenWeight)
-        cols.append('heaviest queen weight')
-        # attribute 2 - heaviest queen location
-        values.append(unravel_index(board.argmax(), board.shape))
-        cols.append('location of heaviest queen')
-        # attribute 3 - lightest queen
-        i = np.unravel_index(np.where(board!=0, board, board.max()+1).argmin(), board.shape)
-        lightestQueen = board[i]
-        values.append(lightestQueen)
-        cols.append('lightest queen weight')
-        # attribute 4 - location of lightest queen
-        values.append(i)
-        cols.append('location of lightest queen')
-        # attribute 5 - initial conflict
-        initialConflict = spot_conflict(board)
-        values.append(initialConflict)
-        cols.append('initial conflicts')
-        # attribute 6 - n
-        n = board.shape[0]
-        values.append(n)
-        cols.append('n')
-        # attribute 7 - average values including 0s
-        avg = np.average(board)
-        values.append(avg)
-        cols.append('average value including 0')
-        #conflict statistics
-        con_stats = conflict_stats(board)
-        # attribute 8 - lightest queen in conflict
-        lic = con_stats[0]
-        values.append(lic)
-        cols.append('lightest in conflict')
-        # attribute 9 - heaviest queen in conflict
-        hic = con_stats[1]
-        values.append(hic)
-        cols.append('heaviest in conflict')
-        # attribute 10 - average weight of queens in conflict
-        avgC = con_stats[2]
-        values.append(avgC)
-        cols.append('average in conflict')
-        # attribute 11 - smallest distance between conflict
-        lDel = con_stats[3]
-        values.append(lDel)
-        cols.append('smallest d in conflict')
-        # attribute 12 - largest distance between conflict
-        hDel = con_stats[4]
-        values.append(hDel)
-        cols.append('largest d in conflict')
-        # attribute 13 - average distance between conflicts
-        avgD = con_stats[5]
-        values.append(avgD)
-        cols.append('average d in conflict')
-        # attribute 14 - row with most queens
-        mqueen = con_stats[7]
-        values.append(mqueen)
-        cols.append('row with most queens')
-        # attribute 15 - row with least queens
-        lqueen = con_stats[8]
-        values.append(lqueen)
-        cols.append('row with least queens')
-        # attribute 16 - count of empty rows (row only has 0s)
-        erow = con_stats[9]
-        values.append(erow)
-        cols.append('num empty rows')
-        # attribute 17 - most queens in a row
-        mqueen_c = con_stats[10]
-        values.append(mqueen_c)
-        cols.append('most queens in row')
-        # attribute 18 - least queens in a row
-        lqueen_c = con_stats[11]
-        values.append(lqueen_c)
-        cols.append('least queens in row')
-        # attribute 19 - average queens in a nonzero row
-        avgqueens = con_stats[12]
-        values.append(avgqueens)
-        cols.append('avg queens in nonzero row')
+        values, cols = get_current_cost(board)
         # build data frame
         temp = pd.DataFrame([values], columns=cols)
         out = out.append(temp, ignore_index=True)

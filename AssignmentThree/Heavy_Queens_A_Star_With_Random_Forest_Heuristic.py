@@ -38,6 +38,7 @@ def conflict_stats(chessboard):
     ldeltar = 0
     ldeltac = 0
     hdeltar = 0
+    hdeltac = 0
     ldeltac = 0
     avgDelta = 0
     erows = 0
@@ -245,10 +246,10 @@ def get_current_cost(chessboard, model):
     avgD = con_stats[9]
     values.append(avgD)
 
-    temp = convert_float(values[1])
-    values[1] = temp
-    temp = convert_float(values[3])
-    values[3] = temp
+    # temp = convert_float(values[1])
+    # values[1] = temp
+    # temp = convert_float(values[3])
+    # values[3] = temp
     values = np.array(values)
     values = values.reshape(1, -1)
     # cols.append('average d in conflict')
@@ -370,11 +371,7 @@ if __name__ == '__main__':
     # train the model
     Y = data['cost']
     X = data.loc[:, data.columns != 'cost']
-    X = X.drop(columns=['row with most queens', 'row with least queens', 'num empty rows', 'most queens in row', 'least queens in row', 'avg queens in nonzero row'])
-    # convert coordiinates to floats
-    X['location of heaviest queen'] = X['location of heaviest queen'].apply(lambda x: convert_float(x))
-    X['location of lightest queen'] = X['location of lightest queen'].apply(lambda x: convert_float(x))
-    model = RandomForestClassifier(max_depth=10)
+    model = RandomForestClassifier(max_depth=20)
     X = X.values
     model.fit(X, Y)
     runtime, SUCCESS = experiment(5, model)
