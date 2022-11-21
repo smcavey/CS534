@@ -11,6 +11,7 @@ import pickle
 import os
 import math
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
 
 def find_upper_l(row,col,chessboard):
     #find uppermost lef diagonal
@@ -25,6 +26,47 @@ def find_upper_r(row,col,chessboard):
         row -=1
         col+=1
     return [row,col]
+
+def spot_conflict(chessboard):
+    count = 0
+    #for every space
+    for row in range(len(chessboard)):
+        for col in range(len(chessboard)):
+            if chessboard[row][col] !=0: #IF YOU FIND A QUEEN
+                #check row 
+                for i in range(len(chessboard)):
+                    if chessboard[row,i] !=0 and i!= col:
+                        count +=1
+                #check column 
+                for j in range(len(chessboard)):
+                    if chessboard[j,col] !=0 and j!= row:
+                        count +=1
+                
+                #check L diag
+                leftMost = find_upper_l(row,col,chessboard)
+                rowMax = leftMost[0]
+                colMax = leftMost[1]
+                for x in range(0,len(chessboard)-max(rowMax,colMax)):
+                    r= rowMax+x
+                    c= colMax+x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+
+                #check R diag
+                rightMost = find_upper_r(row,col,chessboard)
+                rowMax = rightMost[0]
+                colMax = rightMost[1]
+                for x in range(0,colMax-rowMax+1):
+                    r= rowMax+x
+                    c= colMax-x
+                    if chessboard[r,c] != 0 and (r!=row and c!=col):
+                        count +=1
+    return(count)
+
+def get_actual_conflicts(chessboard):
+    current_cost = 0
+    current_cost = spot_conflict(chessboard)
+    return current_cost 
 
 def conflict_stats(chessboard):
     count = 0
@@ -261,10 +303,10 @@ def get_current_cost(chessboard, model):
 def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
     model = model
     current_time = time.time() - start_time
-    print('current time', current_time)
+    #print('current time', current_time)
 
-    if current_time >= 120:
-        return "Timed out", False
+    if current_time >= 180:
+        return "Timed out", False, -1
 
     a = True
     while a == True:
@@ -279,8 +321,8 @@ def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
                     #print("QHY")
                     continue
             except IndexError:
-                return "Index Error", False
-        print("HEY WHATSUP")
+                return "Index Error", False, -1
+        #print("HEY WHATSUP")
         found_list.append(fringe_chess[chosen_chess, 0])
         a = False
         break
@@ -312,9 +354,9 @@ def run_Astar(chessboard, fringe_chess,found_list,start_time, model):
             if fringe_chess[i, 1] < temp_cost:
                 temp_index = i
                 temp_cost = fringe_chess[i, 1]
-        
-        
-        return fringe_chess[temp_index], True
+        fin_conflicts = get_actual_conflicts(fringe_chess[chosen_chess][0])
+        print(fringe_chess[chosen_chess][0])
+        return fringe_chess[temp_index][0], True, fin_conflicts
 
     
         '''If no solution, restarts the search with all opened nodes in the fringe_chess array.'''
@@ -327,7 +369,7 @@ def generate_random_board(n):
     board[np.random.choice(n, n, replace=False), np.arange(n)] = np.random.randint(1, 9,n)
     return board
 
-def experiment(n, model, niters=10,seed = 1):
+def experiment(n, model, niters,seed = 1):
     '''
     this function will run the experiment niters times of the n-queen problem
     '''
@@ -338,14 +380,26 @@ def experiment(n, model, niters=10,seed = 1):
 
     found_list = [0]
     for i in range(niters):
+        print("RUN ", i + 1, ":")
         chessboard = generate_random_board(n)
+        print("INITIAL BOARD: ")
+        print(chessboard)
         fringe_chess = np.array([[chessboard, 0, 0, get_current_cost(chessboard,model), ""]])
+        begin_con = get_actual_conflicts(chessboard)
         start_time = time.time()
         isConverged = None
-        print('i', i)
         start_time = time.time()
-        _, isConverged = run_Astar(chessboard, fringe_chess,found_list,start_time, model)
+        _, isConverged, fin_con = run_Astar(chessboard, fringe_chess,found_list,start_time, model)
         end_time = time.time()
+        try:
+            if fin_con > -1:
+                print("SOLUTION QUALITY: ", str(abs(1 - (float(fin_con/begin_con)))))
+        except ZeroDivisionError:
+            if fin_con != 0:
+                print("SOLUTION QUALITY: Introduced conflict on a solved board 0")
+            else:
+                print("SOLUTION QUALITY: 0")
+        print("RUN TIME: ", str(end_time-start_time))
         if isConverged:
             count+=1
             runtime.append(end_time-start_time)
@@ -362,17 +416,22 @@ def convert_float(inp):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
-    # dir = os.path.dirname(os.path.abspath(__file__))
-    # model = 'model.pkl'
-    # modelPath = os.path.join(dir, model)
+    dir = os.path.dirname(os.path.abspath(__file__))
+    attr = 'attributes.csv'
+    attrPath = os.path.join(dir, attr)
+    n = int(input("Enter board size n: "))
+    iter = int(input("Enter number of boards to run: "))
     # with open(modelPath,'rb') as f:
     # model = pickle.load(f)
-    data = pd.read_csv('attributes.csv')
+    data = pd.read_csv(attrPath)
     # train the model
     Y = data['cost']
     X = data.loc[:, data.columns != 'cost']
     model = RandomForestClassifier(max_depth=20)
     X = X.values
+    # scores = cross_val_score(model, X, Y, cv=10)
+    print("TRAINING...")
     model.fit(X, Y)
-    runtime, SUCCESS = experiment(5, model)
-    print('runtime:', runtime, 'success rate:', SUCCESS)
+    runtime, SUCCESS = experiment(n, model, iter)
+    print('SUCCESS RATE: ', SUCCESS)
+    #print('model 10x accuracy scores', scores)
