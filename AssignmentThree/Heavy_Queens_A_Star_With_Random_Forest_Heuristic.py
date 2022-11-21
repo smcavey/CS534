@@ -377,6 +377,9 @@ def experiment(n, model, niters,seed = 1):
     np.random.seed(seed)
     count = 0
     runtime = []
+    solution_scores = 0
+    solution_scores_list = []
+    count_solutions = 0
 
     found_list = [0]
     for i in range(niters):
@@ -393,16 +396,22 @@ def experiment(n, model, niters,seed = 1):
         end_time = time.time()
         try:
             if fin_con > -1:
-                print("SOLUTION QUALITY: ", str(abs(1 - (float(fin_con/begin_con)))))
+                print("SOLUTION QUALITY: ", str(abs((float(fin_con/begin_con)))))
+                temp = float(fin_con/begin_con)
+                solution_scores = solution_scores + float(fin_con/begin_con)
+                solution_scores_list.append(temp)
+                count_solutions += 1
         except ZeroDivisionError:
             if fin_con != 0:
-                print("SOLUTION QUALITY: Introduced conflict on a solved board 0")
+                print("SOLUTION QUALITY: Introduced conflict on a solved board")
             else:
-                print("SOLUTION QUALITY: 0")
+                print("SOLUTION QUALITY: Introduced conflict on a solved board")
         print("RUN TIME: ", str(end_time-start_time))
         if isConverged:
             count+=1
             runtime.append(end_time-start_time)
+    print("AVERAGE SOLUTION QUALITY:", solution_scores/count_solutions)
+    print("LIST OF ALL SOLUTION QUALITIES:", solution_scores_list)
     return runtime,count/niters
 
 def convert_float(inp):
