@@ -24,7 +24,7 @@ if gym.__version__ < '0.26':
     env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0", new_step_api=True, render_mode="rgb_array")
 else:
     env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0", render_mode="rgb_array", apply_api_compatibility=True)
-wandb.init(project="super-mario-bros", entity="aukkawut")
+wandb.init(project="super-mario-bros", entity="smcavey")
 # Limit the action-space to
 #   0. walk right
 #   1. jump right
